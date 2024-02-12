@@ -1,4 +1,6 @@
-[![Packagist](https://img.shields.io/packagist/v/bhanwarpsrathore/labelcamp-api-php.svg)](https://packagist.org/packages/bhanwarpsrathore/labelcamp-api-php)
+[![Packagist](https://img.shields.io/packagist/v/bhanwarpsrathore/labelcamp-api-php)](https://packagist.org/packages/bhanwarpsrathore/labelcamp-api-php)
+[![Build status](https://github.com/bhanwarpsrathore/labelcamp-api-php/workflows/tests/badge.svg)](https://github.com/bhanwarpsrathore/labelcamp-api-php/actions)
+[![License](https://img.shields.io/packagist/l/bhanwarpsrathore/labelcamp-api-php)](https://packagist.org/packages/bhanwarpsrathore/labelcamp-api-php)
 
 # LabelCamp API PHP
 A PHP wrapper for LabelCamp's API.
@@ -14,4 +16,4 @@ composer require bhanwarpsrathore/labelcamp-api-php
 ```
 
 ## License
-MIT license. Please see [LICENSE](LICENSE) for more info.
+MIT license. Please see [LICENSE](LICENSE.md) for more info.
