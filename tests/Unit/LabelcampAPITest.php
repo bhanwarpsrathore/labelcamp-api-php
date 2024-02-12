@@ -1,6 +1,6 @@
 <?php
 
-/** @var \LabelcampAPI\Tests\TestCase $this */
+/** @var \LabelcampAPI\Tests\TestCase */
 
 use LabelcampAPI\LabelcampAPI;
 use LabelcampAPI\Request;
