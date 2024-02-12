@@ -1,7 +1,5 @@
 <?php
 
-/** @var \LabelcampAPI\Tests\TestCase */
-
 use LabelcampAPI\LabelcampAPI;
 use LabelcampAPI\Request;
 use LabelcampAPI\Session;

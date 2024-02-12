@@ -1,7 +1,5 @@
 <?php
 
-/** @var \LabelcampAPI\Tests\TestCase */
-
 use LabelcampAPI\Request;
 
 it('can be initiated without client', function () {

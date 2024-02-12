@@ -1,7 +1,5 @@
 <?php
 
-/** @var \LabelcampAPI\Resource Tests\TestCase */
-
 use LabelcampAPI\Resource\ToOneRelationship;
 
 it('can be initiated with type and id', function () {

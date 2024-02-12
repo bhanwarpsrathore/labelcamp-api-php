@@ -1,7 +1,5 @@
 <?php
 
-/** @var \LabelcampAPI\Resource Tests\TestCase */
-
 use LabelcampAPI\Resource\ResourceObject;
 
 it('can be initiated with only type', function () {

@@ -1,7 +1,5 @@
 <?php
 
-/** @var \LabelcampAPI\Resource Tests\TestCase */
-
 use LabelcampAPI\Resource\ToManyRelationship;
 
 it('can be used with single relationship', function () {
