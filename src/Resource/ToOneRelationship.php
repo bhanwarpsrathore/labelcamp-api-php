@@ -9,7 +9,7 @@ final class ToOneRelationship {
     private string $type;
     private string $id;
 
-    public function __construct(string $type = '', string $id = '') {
+    public function __construct(string $type, string $id) {
         $this->type = $type;
         $this->id = $id;
     }
