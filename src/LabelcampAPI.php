@@ -134,12 +134,10 @@ class LabelcampAPI {
             $headers = $this->authHeaders($headers);
 
             $options = ['headers' => $headers];
-            if (isset($parameters['filter'])) {
-                $options['query'] = $parameters;
-            } elseif ($parameters) {
+
+            if ($parameters) {
                 $options['json'] = $parameters;
             }
-
 
             return $this->request->api($method, $uri, $options);
         } catch (LabelcampAPIException $e) {
@@ -190,6 +188,49 @@ class LabelcampAPI {
     }
 
     /**
+     * Get Uri With availabel Query Parameters
+     * 
+     * @param string $uri
+     * @param array $queryFilters
+     * @param array $queryPages
+     * @param array $queryIncludes
+     * @param array $sort
+     */
+    public function getUriWithQueryParameters(string $uri, array $queryFilters = [], array $queryPages = [], array $queryIncludes = [], array $querySort = []) {
+        $requestedParams  = [];
+
+        if ($queryFilters) {
+            foreach ($queryFilters as $name => $filter) {
+                if (is_array($filter)) {
+                    $requestedParams[$name] = implode(",", $filter);
+                } else {
+                    $requestedParams[$name] = $filter;
+                }
+            }
+        }
+
+        if ($queryPages) {
+            $requestedParams['page'] = $queryPages;
+        }
+
+        if ($queryIncludes) {
+            $requestedParams['include'] = implode(",", $queryIncludes);
+        }
+
+        if ($querySort) {
+            $requestedParams['sort'] = implode(",", $querySort);
+        }
+
+        $query_string = http_build_query($requestedParams);
+
+        if (empty($query_string)) {
+            return $uri;
+        }
+
+        return $uri . '?' . $query_string;
+    }
+
+    /**
      *  Get user
      * 
      * @link https://developer.labelcamp.io/resources/user
@@ -203,11 +244,9 @@ class LabelcampAPI {
     public function getUser(string $user_id = '', array $filter = []): array {
         $uri = '/users/' . $user_id;
 
-        $parameters = [
-            "filter" => $filter
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -217,14 +256,17 @@ class LabelcampAPI {
      * 
      * @link https://developer.labelcamp.io/resources/user
      * 
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function createUser(array $parameters): array {
+    public function createUser(array $attributes, array $relationships): array {
         $uri = '/users';
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $request_data = $this->getResource("users", "", $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('POST', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -235,14 +277,17 @@ class LabelcampAPI {
      * @link https://developer.labelcamp.io/resources/user
      * 
      * @param string $user_id
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function updateUser(string $user_id, array $parameters): array {
+    public function updateUser(string $user_id, array $attributes, array $relationships): array {
         $uri = '/users/' . $user_id;
 
-        $this->lastResponse = $this->apiRequest('PUT', $uri, $parameters);
+        $request_data = $this->getResource('users', $user_id, $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('PUT', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -274,11 +319,9 @@ class LabelcampAPI {
     public function getDspsList(string $dsp_id = '', array $filter = []): array {
         $uri = '/dsps/' . $dsp_id;
 
-        $parameters = [
-            "filter" => $filter
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -314,12 +357,9 @@ class LabelcampAPI {
     public function getArtist(string $artist_id = '', array $filter = [], array $page = []): array {
         $uri = '/artists/' . $artist_id;
 
-        $parameters = [
-            'filter' => $filter,
-            'page' => $page
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter, $page);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -380,11 +420,9 @@ class LabelcampAPI {
     public function getTracks(string $track_id = '', array $filter = []): array {
         $uri = '/tracks/' . $track_id;
 
-        $parameters = [
-            "filter" => $filter,
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -394,15 +432,18 @@ class LabelcampAPI {
      * 
      * @link https://developer.labelcamp.io/resources/track#create-track
      * 
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
 
-    public function createTrack(array $parameters): array {
+    public function createTrack(array $attributes, array $relationships): array {
         $uri = '/tracks';
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $request_data = $this->getResource('tracks', "", $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('POST', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -413,15 +454,18 @@ class LabelcampAPI {
      * @link https://developer.labelcamp.io/resources/track
      * 
      * @param string $track_id
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
 
-    public function updateTrack(string $track_id, array $parameters): array {
+    public function updateTrack(string $track_id, array $attributes, array $relationships): array {
         $uri = '/tracks/' . $track_id;
 
-        $this->lastResponse = $this->apiRequest('PUT', $uri, $parameters);
+        $request_data = $this->getResource('tracks', $track_id, $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('PUT', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -454,11 +498,9 @@ class LabelcampAPI {
     public function getCompanies(string $company_id = '', array $filter = []): array {
         $uri = '/companies/' . $company_id;
 
-        $parameters = [
-            "filter" => $filter,
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -468,14 +510,17 @@ class LabelcampAPI {
      * 
      * @link https://developer.labelcamp.io/resources/company#create-company
      * 
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function createCompanie(array $parameters): array {
+    public function createCompanie(array $attributes, array $relationships): array {
         $uri = '/companies';
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $request_data = $this->getResource('companies', "", $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('POST', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -486,14 +531,17 @@ class LabelcampAPI {
      * @link https://developer.labelcamp.io/resources/company#update-company
      * 
      * @param string $companie_id
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function updateCompanie(string $companie_id, array $parameters): array {
+    public function updateCompanie(string $companie_id, array $attributes, array $relationships): array {
         $uri = '/companies/' . $companie_id;
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $request_data = $this->getResource('companies', $companie_id, $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('PUT', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -560,11 +608,9 @@ class LabelcampAPI {
     public function getDistributor(string $distributor_id = '', array $filter = []): array {
         $uri = '/distributors/' . $distributor_id;
 
-        $parameters = [
-            "filter" => $filter,
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -582,11 +628,9 @@ class LabelcampAPI {
     public function getDistributorPriceCode(string $distributor_price_code_id = '', array $filter = []): array {
         $uri = '/distributor-price-codes/' . $distributor_price_code_id;
 
-        $parameters = [
-            "filter" => $filter,
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -604,11 +648,9 @@ class LabelcampAPI {
     public function getDistributorProductSubGenres(string $distributor_product_sub_genres_id = '', array $filter = []): array {
         $uri = '/distributor-product-sub-genres/' . $distributor_product_sub_genres_id;
 
-        $parameters = [
-            "filter" => $filter,
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -626,11 +668,9 @@ class LabelcampAPI {
     public function getDsp(string $dsp_id = '', array $filter = []): array {
         $uri = '/dsps/' . $dsp_id;
 
-        $parameters = [
-            "filter" => $filter,
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -648,11 +688,9 @@ class LabelcampAPI {
     public function getDspState(string $dsp_state_id = '', array $filter = []): array {
         $uri = '/dsp-states/' . $dsp_state_id;
 
-        $parameters = [
-            "filter" => $filter
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -662,14 +700,17 @@ class LabelcampAPI {
      * 
      * @link https://developer.labelcamp.io/resources/dspstate
      * 
-     * @param array $parameters 
+     * @param array $attributes 
+     * @param array $relationships 
      * 
      * @return array
      */
-    public function createDspState(array $parameters): array {
+    public function createDspState(array $attributes, array $relationships): array {
         $uri = '/dsp-states';
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $request_data = $this->getResource("dsp-states", "", $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('POST', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -704,11 +745,9 @@ class LabelcampAPI {
     public function getGroup(string $group_id = '', array $filter = []): array {
         $uri = '/groups/' . $group_id;
 
-        $parameters = [
-            "filter" => $filter,
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -718,14 +757,17 @@ class LabelcampAPI {
      * 
      * @link https://developer.labelcamp.io/resources/group
      * 
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function createGroup(array $parameters): array {
+    public function createGroup(array $attributes, array $relationships): array {
         $uri = '/groups';
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $request_data = $this->getResource("groups", "", $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('POST', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -736,14 +778,17 @@ class LabelcampAPI {
      * @link https://developer.labelcamp.io/resources/group
      * 
      * @param string $group_id
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function updateGroup(string $group_id, array $parameters): array {
+    public function updateGroup(string $group_id, array $attributes, array $relationships): array {
         $uri = '/groups/' . $group_id;
 
-        $this->lastResponse = $this->apiRequest('PUT', $uri, $parameters);
+        $request_data = $this->getResource("groups", $group_id, $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('PUT', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -774,11 +819,9 @@ class LabelcampAPI {
     public function getImportTask(string $import_task_id = '', array $filter = []): array {
         $uri = '/import-tasks/' . $import_task_id;
 
-        $parameters = [
-            "filter" => $filter
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -788,14 +831,17 @@ class LabelcampAPI {
      * 
      * @link https://developer.labelcamp.io/resources/importtask
      * 
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function createImportTask(array $parameters): array {
+    public function createImportTask(array $attributes, array $relationships): array {
         $uri = '/import-tasks';
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $request_data = $this->getResource("import-tasks", "", $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('POST', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -813,11 +859,9 @@ class LabelcampAPI {
     public function getLabel(string $label_id = '', array $filter = []): array {
         $uri = '/labels/' . $label_id;
 
-        $parameters = [
-            "filter" => $filter,
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -831,10 +875,12 @@ class LabelcampAPI {
      * 
      * @return array
      */
-    public function createLabel(array $parameters): array {
+    public function createLabel(array $attributes, array $relationships): array {
         $uri = '/labels';
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $request_data = $this->getResource("labels", "", $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('POST', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -845,14 +891,17 @@ class LabelcampAPI {
      * @link https://developer.labelcamp.io/resources/label
      * 
      * @param string $label_id
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function updateLabel(string $label_id, array $parameters): array {
-        $uri = '/labels';
+    public function updateLabel(string $label_id, array $attributes, array $relationships = []): array {
+        $uri = '/labels/' . $label_id;
 
-        $this->lastResponse = $this->apiRequest('PUT', $uri, $parameters);
+        $request_data = $this->getResource("labels", $label_id, $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('PUT', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -900,11 +949,9 @@ class LabelcampAPI {
     public function getOffer(string $offer_id = '', array $filter = []): array {
         $uri = '/offers/' . $offer_id;
 
-        $parameters = [
-            "filter" => $filter,
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -914,14 +961,17 @@ class LabelcampAPI {
      * 
      * @link https://developer.labelcamp.io/resources/offer
      * 
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function createOffer(array $parameters): array {
+    public function createOffer(array $attributes, array $relationships): array {
         $uri = '/offers';
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $request_data = $this->getResource("offers", "", $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('POST', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -932,14 +982,17 @@ class LabelcampAPI {
      * @link https://developer.labelcamp.io/resources/offer
      * 
      * @param string $offer_id
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function updateOffer(string $offer_id, array $parameters): array {
+    public function updateOffer(string $offer_id, array $attributes, array $relationships): array {
         $uri = '/offers' . $offer_id;
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $request_data = $this->getResource("offers", $offer_id, $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('POST', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -964,17 +1017,17 @@ class LabelcampAPI {
      * 
      * @param string $product_id
      * @param array $filter
+     * @param array $includes
+     * @param array $sort
      * 
      * @return array
      */
-    public function getProduct(string $product_id = '', array $filter = []): array {
+    public function getProduct(string $product_id = '', array $filter = [], array $includes = [], array $sort = []): array {
         $uri = '/products/' . $product_id;
 
-        $parameters = [
-            "filter" => $filter,
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter, $includes, $sort);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -984,14 +1037,17 @@ class LabelcampAPI {
      * 
      * @link https://developer.labelcamp.io/resources/product
      * 
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function createProduct(array $parameters): array {
+    public function createProduct(array $attributes, array $relationships): array {
         $uri = '/products';
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $request_data = $this->getResource("products", "", $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('POST', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -1002,14 +1058,17 @@ class LabelcampAPI {
      * @link https://developer.labelcamp.io/resources/product
      * 
      * @param string $product_id
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function updateProduct(string $product_id, array $parameters): array {
+    public function updateProduct(string $product_id, array $attributes, array $relationships): array {
         $uri = '/products/' . $product_id;
 
-        $this->lastResponse = $this->apiRequest('PUT', $uri, $parameters);
+        $request_data = $this->getResource("products", $product_id, $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('PUT', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -1089,28 +1148,9 @@ class LabelcampAPI {
     public function getRecord(string $record_id = '', array $filter = []): array {
         $uri = '/records/' . $record_id;
 
-        $parameters = [
-            "filter" => $filter,
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
-
-        return $this->lastResponse['body'];
-    }
-
-    /**
-     * Create Record
-     * 
-     * @link https://developer.labelcamp.io/resources/record
-     * 
-     * @param array $parameters
-     * 
-     * @return array
-     */
-    public function createRecord(array $parameters): array {
-        $uri = '/records';
-
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -1121,14 +1161,17 @@ class LabelcampAPI {
      * @link https://developer.labelcamp.io/resources/record
      * 
      * @param string $record_id
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function updateRecord(string $record_id, array $parameters): array {
+    public function updateRecord(string $record_id, array $attributes, array $relationships): array {
         $uri = '/records/' . $record_id;
 
-        $this->lastResponse = $this->apiRequest('PUT', $uri, $parameters);
+        $request_data = $this->getResource("records", $record_id, $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('PUT', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -1177,11 +1220,9 @@ class LabelcampAPI {
     public function getRights(string $right_id = '', array $filter = []): array {
         $uri = '/rights/' . $right_id;
 
-        $parameters = [
-            "filter" => $filter,
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -1191,14 +1232,17 @@ class LabelcampAPI {
      * 
      * @link https://developer.labelcamp.io/resources/right
      * 
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function createRight(array $parameters): array {
+    public function createRight(array $attributes, array $relationships): array {
         $uri = '/rights';
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $request_data = $this->getResource("rights", "", $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('POST', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -1209,14 +1253,17 @@ class LabelcampAPI {
      * @link https://developer.labelcamp.io/resources/right
      * 
      * @param string $right_ids
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function updateRight(string $right_id, array $parameters): array {
+    public function updateRight(string $right_id, array $attributes, array $relationships): array {
         $uri = '/rights/' . $right_id;
 
-        $this->lastResponse = $this->apiRequest('PUT', $uri, $parameters);
+        $request_data = $this->getResource("rights", $right_id, $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('PUT', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -1247,11 +1294,9 @@ class LabelcampAPI {
     public function getSendTask(string $send_task_id = '', array $filter = []): array {
         $uri = '/send-tasks/' . $send_task_id;
 
-        $parameters = [
-            "filter" => $filter,
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -1261,14 +1306,17 @@ class LabelcampAPI {
      * 
      * @link https://developer.labelcamp.io/resources/send-task
      * 
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function createSendTask(array $parameters): array {
+    public function createSendTask(array $attributes, array $relationships): array {
         $uri = '/send-tasks';
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $request_data = $this->getResource("send-tasks", "", $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('POST', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -1279,14 +1327,17 @@ class LabelcampAPI {
      * @link https://developer.labelcamp.io/resources/send-task
      * 
      * @param string $send_task_id
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function updateSendTask(string $send_task_id, array $parameters): array {
+    public function updateSendTask(string $send_task_id, array $attributes, array $relationships): array {
         $uri = '/send-tasks/' . $send_task_id;
 
-        $this->lastResponse = $this->apiRequest('PUT', $uri, $parameters);
+        $request_data = $this->getResource("send-tasks", $send_task_id, $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('PUT', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -1304,11 +1355,9 @@ class LabelcampAPI {
     public function getSendTaskFactory(string $send_task_factory_id = '', array $filter = []): array {
         $uri = '/send-task-factories/' . $send_task_factory_id;
 
-        $parameters = [
-            "filter" => $filter,
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -1318,14 +1367,17 @@ class LabelcampAPI {
      * 
      * @link https://developer.labelcamp.io/resources/sendtaskfactory
      * 
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function createSendTaskFactory(array $parameters): array {
+    public function createSendTaskFactory(array $attributes, array $relationships): array {
         $uri = '/send-task-factories';
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $request_data = $this->getResource("send-tasks", "", $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('POST', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -1342,11 +1394,9 @@ class LabelcampAPI {
     public function getSpotifyArtist(array $filter = []): array {
         $uri = '/spotify-artists';
 
-        $parameters = [
-            "filter" => $filter
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -1381,11 +1431,9 @@ class LabelcampAPI {
     public function getTerritory(string $territory_id = '', array $filter = []): array {
         $uri = '/territories/' . $territory_id;
 
-        $parameters = [
-            "filter" => $filter,
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -1403,11 +1451,9 @@ class LabelcampAPI {
     public function getTrackOffer(string $track_offer_id = '', array $filter = []): array {
         $uri = '/track-offers/' . $track_offer_id;
 
-        $parameters = [
-            "filter" => $filter,
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -1417,14 +1463,17 @@ class LabelcampAPI {
      * 
      * @link https://developer.labelcamp.io/resources/trackoffer
      * 
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function createTrackOffer(array $parameters): array {
+    public function createTrackOffer(array $attributes, array $relationships): array {
         $uri = '/track-offers';
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $request_data = $this->getResource("track-offers", "", $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('POST', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -1435,14 +1484,17 @@ class LabelcampAPI {
      * @link https://developer.labelcamp.io/resources/trackoffer
      * 
      * @param string $track_offer_id
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function updateTrackOffer(string $track_offer_id, array $parameters): array {
+    public function updateTrackOffer(string $track_offer_id, array $attributes, array $relationships): array {
         $uri = '/track-offers/' . $track_offer_id;
 
-        $this->lastResponse = $this->apiRequest('PUT', $uri, $parameters);
+        $request_data = $this->getResource("track-offers", $track_offer_id, $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('PUT', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -1473,11 +1525,9 @@ class LabelcampAPI {
     public function getTrackVideo(string $track_video_id = '', array $filter = []): array {
         $uri = '/track-videos/' . $track_video_id;
 
-        $parameters = [
-            "filter" => $filter,
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -1487,14 +1537,17 @@ class LabelcampAPI {
      * 
      * @link https://developer.labelcamp.io/resources/trackvideo
      * 
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function createTrackVideo(array $parameters): array {
+    public function createTrackVideo(array $attributes, array $relationships): array {
         $uri = '/track-videos';
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $request_data = $this->getResource("track-videos", "", $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('POST', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -1505,14 +1558,17 @@ class LabelcampAPI {
      * @link https://developer.labelcamp.io/resources/trackvideo
      * 
      * @param string $track_video_id
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function updateTrackVideo(string $track_video_id, array $parameters): array {
+    public function updateTrackVideo(string $track_video_id, array $attributes, array $relationships): array {
         $uri = '/track-videos/' . $track_video_id;
 
-        $this->lastResponse = $this->apiRequest('PUT', $uri, $parameters);
+        $request_data = $this->getResource("track-videos", $track_video_id, $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('PUT', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -1543,11 +1599,9 @@ class LabelcampAPI {
     public function getVideos(string $video_id = '', array $filter = []): array {
         $uri = '/videos/' . $video_id;
 
-        $parameters = [
-            "filter" => $filter,
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -1557,14 +1611,17 @@ class LabelcampAPI {
      * 
      * @link https://developer.labelcamp.io/resources/video
      * 
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function createVideo(array $parameters): array {
+    public function createVideo(array $attributes, array $relationships): array {
         $uri = '/videos';
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $request_data = $this->getResource("videos", "", $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('POST', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -1575,14 +1632,17 @@ class LabelcampAPI {
      * @link https://developer.labelcamp.io/resources/video
      * 
      * @param string $video_id
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function updateVideo(string $video_id, array $parameters): array {
+    public function updateVideo(string $video_id, array $attributes, array $relationships): array {
         $uri = '/videos/' . $video_id;
 
-        $this->lastResponse = $this->apiRequest('PUT', $uri, $parameters);
+        $request_data = $this->getResource("videos", $video_id, $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('PUT', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -1622,14 +1682,17 @@ class LabelcampAPI {
      * 
      * @link https://developer.labelcamp.io/resources/webhooks
      * 
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function createWebhook(array $parameters): array {
+    public function createWebhook(array $attributes, array $relationships): array {
         $uri = '/webhooks';
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $request_data = $this->getResource("webhooks", "", $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('POST', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -1669,14 +1732,17 @@ class LabelcampAPI {
      * 
      * @link https://developer.labelcamp.io/resources/appleartist
      * 
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function createAppleArtist(array $parameters): array {
+    public function createAppleArtist(array $attributes, array $relationships): array {
         $uri = '/apple-artists';
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $request_data = $this->getResource("apple-artists", "", $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('POST', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -1694,11 +1760,9 @@ class LabelcampAPI {
     public function getAvailability(string $availability_id = '', array $filter = []): array {
         $uri = '/availabilities/' . $availability_id;
 
-        $parameters = [
-            "filter" => $filter
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -1708,14 +1772,17 @@ class LabelcampAPI {
      * 
      * @link https://developer.labelcamp.io/resources/availability
      * 
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function createAvailability(array $parameters): array {
+    public function createAvailability(array $attributes, array $relationships): array {
         $uri = '/availabilities';
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
+        $request_data = $this->getResource("availabilities", "", $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('POST', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -1726,14 +1793,17 @@ class LabelcampAPI {
      * @link https://developer.labelcamp.io/resources/availability
      * 
      * @param string $availability_id
-     * @param array $parameters
+     * @param array $attributes
+     * @param array $relationships
      * 
      * @return array
      */
-    public function updateAvailability(string $availability_id, array $parameters): array {
+    public function updateAvailability(string $availability_id, array $attributes, array $relationships): array {
         $uri = '/availabilities/' . $availability_id;
 
-        $this->lastResponse = $this->apiRequest('PUT', $uri, $parameters);
+        $request_data = $this->getResource("availabilities", $availability_id, $attributes, $relationships);
+
+        $this->lastResponse = $this->apiRequest('PUT', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
@@ -1750,23 +1820,6 @@ class LabelcampAPI {
         $uri = '/availabilities/' . $availability_id;
 
         $this->apiRequest('DELETE', $uri);
-    }
-
-    /**
-     * Create Booklet
-     * 
-     * @link https://developer.labelcamp.io/resources/booklet
-     * 
-     * @param array $parameters
-     * 
-     * @return array
-     */
-    public function createBooklet(array $parameters): array {
-        $uri = '/booklet';
-
-        $this->lastResponse = $this->apiRequest('POST', $uri, $parameters);
-
-        return $this->lastResponse['body'];
     }
 
     /**
@@ -1797,11 +1850,9 @@ class LabelcampAPI {
     public function getDspTag(string $dsp_tag_id = '', array $filter = []): array {
         $uri = '/dsp-tags/' . $dsp_tag_id;
 
-        $parameters = [
-            "filter" => $filter
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
@@ -1819,11 +1870,9 @@ class LabelcampAPI {
     public function getDspUploadIdentification(string $dsp_upload_identification_id = '', array $filter = []): array {
         $uri = '/dsp-upload-identifications/' . $dsp_upload_identification_id;
 
-        $parameters = [
-            "filter" => $filter
-        ];
+        $uri = $this->getUriWithQueryParameters($uri, $filter);
 
-        $this->lastResponse = $this->apiRequest('GET', $uri, $parameters);
+        $this->lastResponse = $this->apiRequest('GET', $uri);
 
         return $this->lastResponse['body'];
     }
