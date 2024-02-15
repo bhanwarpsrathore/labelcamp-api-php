@@ -7,6 +7,7 @@ namespace LabelcampAPI;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ServerException;
 use GrahamCampbell\GuzzleFactory\GuzzleFactory;
 
 class Request {
@@ -41,30 +42,36 @@ class Request {
     protected function handleResponseError(string $body, int $status): void {
         $parsedBody = json_decode($body);
         $errors = $parsedBody->errors ?? null;
-        $error_message = $errors[0]->status == 401 ? $errors[0]->detail : null;
-        $user_message = $errors[0]->title ?? null;
 
-        if ($error_message) {
+        if (isset($errors[0]) && isset($errors[0]->detail)) {
             // It's an Auth error
-            throw new LabelcampAPIException($this->parseError($error_message), $status);
-        } elseif (isset($parsedBody->error_description) && is_string($parsedBody->error)) {
-            // It's an auth call error
-            throw  new LabelcampAPIException($parsedBody->error_description, $status);
-        } elseif ($user_message) {
-            // It's a user error
-            throw new LabelcampAPIException($user_message, $status);
-        } else {
-            // Something went really wrong, we don't know what
-            throw new LabelcampAPIException('An unknown error occurred.', $status);
+            throw new LabelcampAPIException($errors[0]->detail, $status);
         }
+
+        // Something went really wrong, we don't know what
+        throw new LabelcampAPIException('An unknown error occurred.', $status);
     }
 
-    protected function parseError($summary = null) {
-        if (stripos($summary, 'access token expired') !== false) {
-            return 'The access token expired';
-        } elseif (stripos($summary, 'access token is invalid') !== false) {
-            return 'Invalid refresh token';
+    /**
+     * Handle server errors.
+     *
+     * @param string $body The raw, unparsed response body.
+     * @param int $status The HTTP status code, passed along to any exceptions thrown.
+     *
+     * @throws LabelcampAPIException
+     *
+     * @return void
+     */
+    protected function handleServerError(string $body, int $status): void {
+        $parsedBody = json_decode($body);
+
+        $message = $parsedBody->message ?? null;
+
+        if ($message) {
+            throw new LabelcampAPIException('API error: ' . $message, $status);
         }
+
+        throw new LabelcampAPIException('API error: Internal Server Error', $status);
     }
 
     /**
@@ -143,6 +150,9 @@ class Request {
         } catch (ClientException $exception) {
             $response = $exception->getResponse();
             $this->handleResponseError($exception->getResponse()->getBody()->getContents(), $exception->getResponse()->getStatusCode());
+        } catch (ServerException $exception) {
+            $response = $exception->getResponse();
+            $this->handleServerError($exception->getResponse()->getBody()->getContents(), $exception->getResponse()->getStatusCode());
         }
 
         $body = $parsedBody = $response->getBody();
