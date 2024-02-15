@@ -153,6 +153,10 @@ class Request {
             $parsedBody = json_decode($body->getContents(), true);
         }
 
+        if (in_array('application/json; charset=utf-8', $response->getHeader('Content-Type'))) {
+            $parsedBody = json_decode($body->getContents(), true);
+        }
+
         $this->lastResponse = [
             'body' => $parsedBody,
             'headers' => $parsedHeaders,
