@@ -7,7 +7,6 @@ namespace LabelcampAPI;
 class Session {
 
     protected string $accessToken = '';
-    protected string $refreshToken = '';
     protected string $username = '';
     protected string $password = '';
     protected int $expirationTime = 0;
@@ -54,15 +53,6 @@ class Session {
     }
 
     /**
-     * Get Refresh Token
-     * 
-     * @return string The refresh token.
-     */
-    public function getRefreshToken(): string {
-        return $this->refreshToken;
-    }
-
-    /**
      * Get the access token expiration time.
      *
      * @return int A Unix timestamp indicating the token expiration time.
@@ -89,36 +79,7 @@ class Session {
 
         if (isset($response['access_token'])) {
             $this->accessToken = $response["access_token"];
-            $this->refreshToken = isset($response["refresh_token"]) ? $response["refresh_token"] : '';
             $this->expirationTime = time() + $response["expires_in"];
-
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Refresh Access Token
-     * 
-     * @return boolean True if the token was refreshed. 
-     */
-    public function refreshAccessToken(?string $refreshToken = null): bool {
-        $parameters = [
-            'grant_type' => 'refresh_token',
-            'refresh_token' => $refreshToken ?? $this->refreshToken
-        ];
-
-        $response = $this->request->token('POST', '/token', ["form_params" => $parameters]);
-
-        if (isset($response["access_token"])) {
-            $this->accessToken = $response['access_token'];
-            $this->expirationTime = time() + $response['expires_in'];
-            $this->refreshToken = $response['refresh_token'];
-
-            if (empty($this->refreshToken)) {
-                $this->refreshToken = $refreshToken;
-            }
 
             return true;
         }
@@ -146,19 +107,6 @@ class Session {
      */
     public function setPassword(string $password): self {
         $this->password = $password;
-
-        return $this;
-    }
-
-    /**
-     * Set refresh token in session.
-     *
-     * @param string $refreshToken The refresh token.
-     *
-     * @return self
-     */
-    public function setRefreshToken(string $refreshToken): self {
-        $this->refreshToken = $refreshToken;
 
         return $this;
     }

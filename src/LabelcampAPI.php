@@ -141,8 +141,8 @@ class LabelcampAPI {
 
             return $this->request->api($method, $uri, $options);
         } catch (LabelcampAPIException $e) {
-            if ($this->options['auto_refresh'] && $e->hasExpiredToken()) {
-                $result = $this->session->refreshAccessToken();
+            if ($this->options['auto_refresh'] && $e->hasExpiredToken() && $this->session) {
+                $result = $this->session->requestAccessToken();
 
                 if (!$result) {
                     throw new LabelcampAPIException('Could not refresh access token.');

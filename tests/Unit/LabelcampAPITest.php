@@ -12,8 +12,7 @@ it('can be initiated without options', function () {
 
 it('can be initiated with options', function () {
     $api = new LabelcampAPI([
-        'auto_refresh' => true,
-        'auto_retry' => true
+        'auto_refresh' => true
     ]);
 
     expect($api)->toBeInstanceOf(LabelcampAPI::class);
