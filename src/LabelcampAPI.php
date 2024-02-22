@@ -515,7 +515,7 @@ class LabelcampAPI {
      * 
      * @return array
      */
-    public function createCompanie(array $attributes, array $relationships): array {
+    public function createCompany(array $attributes, array $relationships): array {
         $uri = '/companies';
 
         $request_data = $this->getResource('companies', "", $attributes, $relationships);
@@ -536,7 +536,7 @@ class LabelcampAPI {
      * 
      * @return array
      */
-    public function updateCompanie(string $companie_id, array $attributes, array $relationships): array {
+    public function updateCompany(string $companie_id, array $attributes, array $relationships): array {
         $uri = '/companies/' . $companie_id;
 
         $request_data = $this->getResource('companies', $companie_id, $attributes, $relationships);
