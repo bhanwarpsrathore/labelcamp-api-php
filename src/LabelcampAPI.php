@@ -988,11 +988,11 @@ class LabelcampAPI {
      * @return array
      */
     public function updateOffer(string $offer_id, array $attributes, array $relationships): array {
-        $uri = '/offers' . $offer_id;
+        $uri = '/offers/' . $offer_id;
 
         $request_data = $this->getResource("offers", $offer_id, $attributes, $relationships);
 
-        $this->lastResponse = $this->apiRequest('POST', $uri, $request_data);
+        $this->lastResponse = $this->apiRequest('PUT', $uri, $request_data);
 
         return $this->lastResponse['body'];
     }
